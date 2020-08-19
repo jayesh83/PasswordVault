@@ -1,8 +1,12 @@
 package com.example.passwordvault.ui.activities
 
+import android.Manifest
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.findNavController
@@ -12,18 +16,24 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.passwordvault.R
 import com.example.passwordvault.databinding.ActivityMainBinding
-import com.example.passwordvault.ui.fragments.AddCardDetails
-import com.github.clans.fab.FloatingActionButton
-import com.github.clans.fab.FloatingActionMenu
+import com.example.passwordvault.service.CallReceiverService
+import com.example.passwordvault.util.Permissions
+import com.example.passwordvault.util.ServiceStarter
+import com.example.passwordvault.util.WorkerProvider
 import dagger.hilt.android.AndroidEntryPoint
+
+private const val REQUEST_PERMISSIONS = 200
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
     private lateinit var appBarConfiguration: AppBarConfiguration
-    private lateinit var binding : ActivityMainBinding
-    private lateinit var listener : NavController.OnDestinationChangedListener
+    private lateinit var binding: ActivityMainBinding
+    private lateinit var listener: NavController.OnDestinationChangedListener
 
+    // Requesting permission to RECORD_AUDIO
+    private var permissions: Array<String> =
+        arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_PHONE_STATE)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,15 +42,34 @@ class MainActivity : AppCompatActivity() {
 
 
         navController = findNavController(R.id.fragment)
-        NavigationUI.setupWithNavController(binding.navigationView,navController)
-        appBarConfiguration = AppBarConfiguration(navController.graph,binding.drawerLayout)
-        setupActionBarWithNavController(navController,appBarConfiguration)
-        Navigation.setViewNavController(binding.cardsDetails,navController)
+        NavigationUI.setupWithNavController(binding.navigationView, navController)
+        appBarConfiguration = AppBarConfiguration(navController.graph, binding.drawerLayout)
+        setupActionBarWithNavController(navController, appBarConfiguration)
+        Navigation.setViewNavController(binding.cardsDetails, navController)
 
 
         setUpOnClickListeners()
+        checkPermissions()
+        ServiceStarter.startCallReceiverService(applicationContext)
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
+//            WorkerProvider.startUriChecker(applicationContext)
+    }
 
+    private fun checkPermissions() {
 
+        if (Permissions.audioPermission(this) != PackageManager.PERMISSION_GRANTED)
+            askPermission()
+
+        if (Permissions.phoneStatePermission(this) != PackageManager.PERMISSION_GRANTED)
+            askPermission()
+    }
+
+    private fun askPermission() {
+        ActivityCompat.requestPermissions(
+            this@MainActivity,
+            permissions,
+            REQUEST_PERMISSIONS
+        )
     }
 
     private fun setUpOnClickListeners() {
@@ -66,13 +95,5 @@ class MainActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         val navController = findNavController(R.id.fragment)
         return navController.navigateUp(appBarConfiguration) || super.onSupportNavigateUp()
-    }
-
-    override fun onPause() {
-        super.onPause()
-    }
-
-    override fun onResume() {
-        super.onResume()
     }
 }
