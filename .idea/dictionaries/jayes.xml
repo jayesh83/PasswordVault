@@ -2,8 +2,13 @@
   <dictionary name="jayes">
     <words>
       <w>cognito</w>
+      <w>discon</w>
+      <w>fivemin</w>
       <w>japps</w>
+      <w>mins</w>
+      <w>mqtt</w>
       <w>nomedia</w>
+      <w>paho</w>
       <w>passwordvault</w>
       <w>recoder</w>
       <w>restarter</w>

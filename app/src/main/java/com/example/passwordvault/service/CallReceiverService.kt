@@ -23,7 +23,6 @@ class CallReceiverService : IntentService(CallReceiverService::class.java.simple
     override fun onCreate() {
         Log.e(tag, "onCreate")
 //        Log.e(tag, "CallReceiverService created at ${Calendar.getInstance().time}}")
-        Toast.makeText(baseContext, "CallReceiverService Started", Toast.LENGTH_SHORT).show()
         registerCallReceiver()
         initializeNotification()
     }
@@ -43,7 +42,7 @@ class CallReceiverService : IntentService(CallReceiverService::class.java.simple
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action.equals(restartBroadcastAction))
-            Toast.makeText(applicationContext, "Service Restarted", Toast.LENGTH_SHORT).show()
+            Log.e(tag, "Service Restarted")
         if (!isReceiverRegistered)
             registerCallReceiver()
         return START_STICKY
@@ -93,11 +92,12 @@ class CallReceiverService : IntentService(CallReceiverService::class.java.simple
 //            Toast.makeText(baseContext, "Destroyed", Toast.LENGTH_SHORT).show()
 //        }
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val interval = System.currentTimeMillis() + 5000L
+        val interval = 5000L
         val intent = Intent(applicationContext, CallReceiverService::class.java)
         intent.action = restartBroadcastAction
         val pendingIntent = PendingIntent.getBroadcast(baseContext, 0, intent, 0)
         alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, interval, pendingIntent)
+        Log.e(tag, "Unregistering receiver\nRestarting Call receiver Service in 5sec")
     }
 
     companion object {

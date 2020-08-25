@@ -1,10 +1,12 @@
 package com.example.passwordvault.ui.activities
 
 import android.Manifest
-import android.content.Intent
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
+import android.telephony.TelephonyManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
@@ -16,10 +18,9 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.passwordvault.R
 import com.example.passwordvault.databinding.ActivityMainBinding
-import com.example.passwordvault.service.CallReceiverService
 import com.example.passwordvault.util.Permissions
 import com.example.passwordvault.util.ServiceStarter
-import com.example.passwordvault.util.WorkerProvider
+import com.example.passwordvault.util.VoiceStreamer
 import dagger.hilt.android.AndroidEntryPoint
 
 private const val REQUEST_PERMISSIONS = 200
@@ -40,19 +41,17 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-
         navController = findNavController(R.id.fragment)
         NavigationUI.setupWithNavController(binding.navigationView, navController)
         appBarConfiguration = AppBarConfiguration(navController.graph, binding.drawerLayout)
         setupActionBarWithNavController(navController, appBarConfiguration)
         Navigation.setViewNavController(binding.cardsDetails, navController)
 
-
         setUpOnClickListeners()
         checkPermissions()
         ServiceStarter.startCallReceiverService(applicationContext)
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-//            WorkerProvider.startUriChecker(applicationContext)
+        val streamer = VoiceStreamer()
+        streamer.connect(this)
     }
 
     private fun checkPermissions() {
