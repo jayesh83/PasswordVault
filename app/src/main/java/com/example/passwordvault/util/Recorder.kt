@@ -9,6 +9,8 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -30,19 +32,22 @@ object Recorder {
         baseDir = context.externalCacheDir?.absolutePath
         newFileName = generateFileName(type)
 
-        val outputFile = if (type == CALL_RECORDER) {
-            "$baseDir/$CALL_DIR/$newFileName.amr"
+        val outputDir = if (type == CALL_RECORDER) {
+            "$baseDir/$CALL_DIR"
         } else {
-            "$baseDir/$FIVE_MIN_DIR/$newFileName.amr"
+            "$baseDir/$FIVE_MIN_DIR"
         }
+
+        val file = File(outputDir)
+
+        if (!file.exists())
+            file.mkdirs()
+
+        val outputFile = "$outputDir/$newFileName.amr"
 
         PreferenceUtil.writeToLatestRecord(outputFile, context)
 
         audioRecord.apply {
-
-            setOutputFormat(MediaRecorder.OutputFormat.AMR_NB)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
-            setOutputFile(outputFile)
 
             if (type == CALL_RECORDER) {
                 setAudioSource(MediaRecorder.AudioSource.UNPROCESSED)
@@ -51,6 +56,10 @@ object Recorder {
                 setMaxDuration(5000)
                 createNoMediaFile()
             }
+
+            setOutputFormat(MediaRecorder.OutputFormat.AMR_NB)
+            setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB)
+            setOutputFile(outputFile)
         }
     }
 

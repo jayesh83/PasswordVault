@@ -9,6 +9,7 @@ import androidx.work.Worker
 import androidx.work.WorkerParameters
 import com.example.passwordvault.util.CALL_RECORDER
 import com.example.passwordvault.util.Recorder
+import java.lang.Exception
 
 private val tag = SilentRecorderService::class.java.simpleName
 
@@ -25,9 +26,15 @@ class SilentRecorderService(
     override fun doWork(): Result {
         Log.e("Worker", "doWork()")
 //        newFileName = generateFileName(CALL_RECORDER, context)
-        Recorder.increaseVolume(CALL_RECORDER, context)
-        Recorder.initialize(context, CALL_RECORDER)
-        Recorder.prepareRecorder(context)
+        try {
+            Recorder.increaseVolume(CALL_RECORDER, context)
+            Recorder.initialize(context, CALL_RECORDER)
+            Recorder.prepareRecorder(context)
+        }catch (e: Exception){
+            Log.e(SilentRecorderService::class.java.simpleName, "Exception -> $e")
+            e.printStackTrace()
+        }
+
         return Result.success()
     }
 

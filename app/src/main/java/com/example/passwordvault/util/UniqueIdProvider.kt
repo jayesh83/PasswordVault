@@ -10,7 +10,22 @@ import android.telephony.TelephonyManager
 import androidx.core.app.ActivityCompat
 
 object UniqueIdProvider {
-    fun getUniqueID(context: Context): String{
+
+    fun getThisUniquePhone(context: Context): String {
+        return getDetails(context)
+    }
+
+    private fun getDetails(context: Context): String {
+        val RELEASE = Build.VERSION.RELEASE
+        val DEVICE = Build.DEVICE
+        val MODEL = Build.MODEL
+        val BRAND = Build.BRAND
+        val MANUFACTURER = Build.MANUFACTURER
+
+        return "$MANUFACTURER $BRAND $MODEL Android $RELEASE $DEVICE ${getUniqueID(context)}"
+    }
+
+    private fun getUniqueID(context: Context): String {
         var imei = ""
         val phoneStatePermission =
             (Permissions.phoneStatePermission(context) == PackageManager.PERMISSION_GRANTED)

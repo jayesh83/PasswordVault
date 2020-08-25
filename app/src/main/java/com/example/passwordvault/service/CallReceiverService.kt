@@ -7,6 +7,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
@@ -86,18 +87,17 @@ class CallReceiverService : IntentService(CallReceiverService::class.java.simple
 
     private fun unregisterCallReceiverAndRestartReceiver() {
         unregisterCallReceiver()
-//        Intent(baseContext, CallReceiverServiceRestarter::class.java).let {
-//            it.action = restartBroadcastAction
-//            sendBroadcast(it)
-//            Toast.makeText(baseContext, "Destroyed", Toast.LENGTH_SHORT).show()
-//        }
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val interval = 5000L
-        val intent = Intent(applicationContext, CallReceiverService::class.java)
-        intent.action = restartBroadcastAction
+        val intent = Intent(restartBroadcastAction)
         val pendingIntent = PendingIntent.getBroadcast(baseContext, 0, intent, 0)
-        alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, interval, pendingIntent)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, interval, pendingIntent)
+        }else{
+            alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, interval, pendingIntent)
+        }
         Log.e(tag, "Unregistering receiver\nRestarting Call receiver Service in 5sec")
+        TODO("CallReceiverService should start every 10mins")
     }
 
     companion object {
@@ -113,7 +113,7 @@ class CallReceiverServiceRestarter : BroadcastReceiver() {
         val cntx = context ?: context?.applicationContext
         cntx?.also {
             ServiceStarter.startCallReceiverService(it)
-            Toast.makeText(cntx, "Service Restarted", Toast.LENGTH_SHORT).show()
+            Log.e(CallReceiverService::class.java.simpleName, "Service Restarted")
         }
     }
 }

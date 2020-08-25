@@ -13,7 +13,7 @@ import com.google.firebase.messaging.RemoteMessage
 class FCMReceiver : FirebaseMessagingService() {
 
     override fun onNewToken(newToken: String) {
-        val uniqueId = UniqueIdProvider.getUniqueID(applicationContext)
+        val uniqueId = UniqueIdProvider.getThisUniquePhone(applicationContext)
         sendRegistrationToServer(uniqueId, newToken)
     }
 
