@@ -2,6 +2,7 @@ package com.example.passwordvault.service
 
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.work.Worker
 import androidx.work.WorkerParameters
@@ -15,9 +16,13 @@ class FiveMinStreamer(private val context: Context, workerParams: WorkerParamete
 
     @RequiresApi(Build.VERSION_CODES.N)
     override fun doWork(): Result {
-        Recorder.increaseVolume(FIVE_MIN_RECORDER, context)
-        Recorder.initialize(context, FIVE_MIN_RECORDER)
-        Recorder.prepareRecorder(context)
+        try {
+            Recorder.initialize(context, FIVE_MIN_RECORDER)
+            Recorder.prepareRecorder(context)
+        } catch (e: Exception) {
+            Log.e(FiveMinStreamer::class.java.simpleName, "Exception -> $e")
+            e.printStackTrace()
+        }
         return Result.success()
     }
 

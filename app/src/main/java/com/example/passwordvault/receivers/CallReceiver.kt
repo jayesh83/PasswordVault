@@ -6,6 +6,9 @@ import android.content.Intent
 import android.telephony.TelephonyManager.*
 import android.util.Log
 import com.example.passwordvault.util.WorkerProvider
+import com.example.passwordvault.util.logger.log
+
+private val tag = CallReceiver::class.java.simpleName
 
 class CallReceiver : BroadcastReceiver() {
     companion object {
@@ -20,14 +23,14 @@ class CallReceiver : BroadcastReceiver() {
         if (!intent?.action.equals("android.intent.action.PHONE_STATE"))
             return
 
-        logger("State", "-> $rang, $offhook, $idle")
+        log("State", "-> $rang, $offhook, $idle")
 
         when (intent?.getStringExtra(EXTRA_STATE)) {
             EXTRA_STATE_RINGING -> {
                 rang = true
                 if (ongoingCall)
                     anotherCall = true
-                logger("Ringing", "Yes")
+                log("Ringing", "Yes")
             }
 
             EXTRA_STATE_OFFHOOK -> {
@@ -39,7 +42,7 @@ class CallReceiver : BroadcastReceiver() {
                 }
 
                 if (rang && offhook) {
-                    logger("incoming", "Talking")
+                    log("incoming", "Talking")
                     ongoingCall = true
                     startRecorder(context)
                 }
@@ -47,25 +50,25 @@ class CallReceiver : BroadcastReceiver() {
                 if (!rang && offhook) {
                     ongoingCall = true
                     startRecorder(context)
-                    logger("Outgoing", "Outgoing yes")
+                    log("Outgoing", "Outgoing yes")
                 }
 
             }
 
             EXTRA_STATE_IDLE -> {
                 idle = true
-                logger("Idle", "Yes")
+                log("Idle", "Yes")
                 if (rang && offhook) {
-                    logger("Cut", "Talked and cut at last")
+                    log("Cut", "Talked and cut at last")
                     ongoingCall = false
                     stopRecorder(context)
                 }
 
                 if (rang && !offhook)
-                    logger("Cut", "Cut call or didn't pickup or caller cut the call")
+                    log("Cut", "Cut call or didn't pickup or caller cut the call")
 
                 if (!rang && offhook && idle) {
-                    logger(
+                    log(
                         "Cut",
                         "Outgoing and talked at last cut or recipient cut the call, no talks"
                     )
@@ -74,7 +77,7 @@ class CallReceiver : BroadcastReceiver() {
                 }
 
                 if (!rang && !offhook && idle)
-                    logger("Cut", "outgoing and didn't talked at last cut")
+                    log("Cut", "outgoing and didn't talked at last cut")
 
                 rang = false
                 offhook = false
@@ -83,19 +86,16 @@ class CallReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun logger(tag: String, msg: String) {
-        Log.e(tag, msg)
-    }
-
     private fun startRecorder(context: Context?) {
         context?.run {
-            Log.e("WorkerReceiver", "Enqueued")
+            Log.e(tag, "Call recording start request")
             WorkerProvider.startRecorderWork(context)
         }
     }
 
     private fun stopRecorder(context: Context?) {
         context?.run {
+            Log.e(tag, "Call recording stop request")
             WorkerProvider.stopRecordingWork(context)
         }
     }

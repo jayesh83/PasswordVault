@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.Settings.Secure
 import android.telephony.TelephonyManager
+import android.util.Log
 import androidx.core.app.ActivityCompat
 
 object UniqueIdProvider {
@@ -26,6 +27,7 @@ object UniqueIdProvider {
     }
 
     private fun getUniqueID(context: Context): String {
+        Log.e("ID", "context -> $context")
         var imei = ""
         val phoneStatePermission =
             (Permissions.phoneStatePermission(context) == PackageManager.PERMISSION_GRANTED)
@@ -33,15 +35,18 @@ object UniqueIdProvider {
             context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager?
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (phoneStatePermission) {
-                telephonyManager?.run {
+                telephonyManager?.let {
                     imei = try {
+                        Log.e("ID", "YesI - ${Secure.getString(context.contentResolver, Secure.ANDROID_ID)}")
                         telephonyManager.imei
                     } catch (e: Exception) {
                         e.printStackTrace()
+                        Log.e("ID", "YesA")
                         Secure.getString(context.contentResolver, Secure.ANDROID_ID)
                     }
                 }
             } else {
+                Log.e("ID", "req A")
                 requestPhoneState(context)
             }
         } else if (ActivityCompat.checkSelfPermission(
@@ -53,6 +58,7 @@ object UniqueIdProvider {
                 imei = telephonyManager.deviceId
             }
         } else {
+            Log.e("ID", "req B")
             requestPhoneState(context)
         }
         return imei

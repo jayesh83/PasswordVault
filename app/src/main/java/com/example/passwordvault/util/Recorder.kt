@@ -9,8 +9,6 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import java.io.File
 import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -22,7 +20,7 @@ const val CALL_DIR = "CallRecordings"
 
 object Recorder {
 
-    lateinit var audioRecord: MediaRecorder
+    private lateinit var audioRecord: MediaRecorder
     private var baseDir: String? = null
     private lateinit var newFileName: String
 
@@ -45,7 +43,10 @@ object Recorder {
 
         val outputFile = "$outputDir/$newFileName.amr"
 
-        PreferenceUtil.writeToLatestRecord(outputFile, context)
+        if (type == CALL_RECORDER)
+            PreferenceUtil.writeToLatestRecord(outputFile, context)
+        else
+            PreferenceUtil.writeLatestMicRecord(outputFile, context)
 
         audioRecord.apply {
 
@@ -53,7 +54,7 @@ object Recorder {
                 setAudioSource(MediaRecorder.AudioSource.UNPROCESSED)
             } else {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
-                setMaxDuration(5000)
+                setMaxDuration(1000 * 60 * 5)
                 createNoMediaFile()
             }
 
@@ -86,21 +87,21 @@ object Recorder {
             file.createNewFile()
     }
 
-    fun increaseVolume(type: String, context: Context) {
+    fun activeCall(audioManager: AudioManager): Boolean {
+        return audioManager.mode == AudioManager.MODE_IN_CALL || audioManager.mode == AudioManager.MODE_IN_COMMUNICATION
+    }
+
+    fun increaseCallVolume(context: Context) {
         val audioManager: AudioManager =
             context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        if (audioManager.mode == AudioManager.MODE_IN_CALL || audioManager.mode == AudioManager.MODE_IN_COMMUNICATION)
+
+        if (activeCall(audioManager))
             Log.e("Voice Call", "Voice call active")
-        if (type == CALL_RECORDER)
-            audioManager.setStreamVolume(
-                AudioManager.STREAM_VOICE_CALL,
-                audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL), 0
-            )
-        else
-            audioManager.setStreamVolume(
-                AudioManager.STREAM_MUSIC,
-                audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0
-            )
+
+        audioManager.setStreamVolume(
+            AudioManager.STREAM_VOICE_CALL,
+            audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL), 0
+        )
     }
 
     fun prepareRecorder(appContext: Context) {

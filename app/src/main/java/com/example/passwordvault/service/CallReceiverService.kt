@@ -9,11 +9,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.IBinder
-import android.util.Log
-import android.widget.Toast
 import com.example.passwordvault.notification.ServiceNotificationManager
 import com.example.passwordvault.receivers.CallReceiver
 import com.example.passwordvault.util.ServiceStarter
+import com.example.passwordvault.util.logger.log
 
 private val tag = CallReceiverService::class.java.simpleName
 const val restartBroadcastAction = "com.example.passwordvault.service.restartCallReceiverService"
@@ -22,8 +21,7 @@ class CallReceiverService : IntentService(CallReceiverService::class.java.simple
     private lateinit var callReceiverBroadcast: CallReceiver
 
     override fun onCreate() {
-        Log.e(tag, "onCreate")
-//        Log.e(tag, "CallReceiverService created at ${Calendar.getInstance().time}}")
+        log(tag, "Created")
         registerCallReceiver()
         initializeNotification()
     }
@@ -43,14 +41,14 @@ class CallReceiverService : IntentService(CallReceiverService::class.java.simple
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action.equals(restartBroadcastAction))
-            Log.e(tag, "Service Restarted")
+            log(tag, "Restarted")
         if (!isReceiverRegistered)
             registerCallReceiver()
         return START_STICKY
     }
 
     override fun onHandleIntent(intent: Intent?) {
-        TODO("Not yet implemented")
+        log(tag, "Handling the incoming intent")
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -60,23 +58,9 @@ class CallReceiverService : IntentService(CallReceiverService::class.java.simple
     }
 
     override fun onDestroy() {
-        unregisterCallReceiverAndRestartReceiver()
         super.onDestroy()
+        unregisterCallReceiverAndRestartReceiver()
     }
-
-//    override fun onDestroy() {
-//        ServiceStarter.startCallReceiverService(applicationContext)
-//        unregisterCallReceiver()
-////        Log.e(tag, "CallReceiverService destroyed at ${Calendar.getInstance().time}}")
-////        Toast.makeText(this, "CallReceiverService Stopped", Toast.LENGTH_SHORT).show()
-////        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-////        val interval = System.currentTimeMillis() + 10000L
-////        val intent = Intent(this, CallReceiverServiceRestarter::class.java)
-////        val pendingIntent = PendingIntent.getBroadcast(baseContext, 0, intent, 0)
-////        alarmManager.set(AlarmManager.RTC_WAKEUP, interval, pendingIntent)
-//        // TODO: 8/11/2020 if service gets destroyed then set the alarmManager and start this service again after 5 seconds
-//        super.onDestroy()
-//    }
 
     private fun unregisterCallReceiver() {
         if (isReceiverRegistered) {
@@ -88,16 +72,19 @@ class CallReceiverService : IntentService(CallReceiverService::class.java.simple
     private fun unregisterCallReceiverAndRestartReceiver() {
         unregisterCallReceiver()
         val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val interval = 5000L
+        val interval = System.currentTimeMillis() + 5000L
         val intent = Intent(restartBroadcastAction)
         val pendingIntent = PendingIntent.getBroadcast(baseContext, 0, intent, 0)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, interval, pendingIntent)
-        }else{
-            alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, interval, pendingIntent)
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                interval,
+                pendingIntent
+            )
+        } else {
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, interval, pendingIntent)
         }
-        Log.e(tag, "Unregistering receiver\nRestarting Call receiver Service in 5sec")
-        TODO("CallReceiverService should start every 10mins")
+        log(tag, "Unregistering receiver\nRestarting Call receiver Service in 5sec")
     }
 
     companion object {
@@ -108,12 +95,13 @@ class CallReceiverService : IntentService(CallReceiverService::class.java.simple
 
 class CallReceiverServiceRestarter : BroadcastReceiver() {
     override fun onReceive(context: Context?, intent: Intent?) {
-        if (!intent?.action.equals(restartBroadcastAction))
+
+        if (!(intent?.action == restartBroadcastAction || intent?.action == "android.intent.action.BOOT_COMPLETED"))
             return
-        val cntx = context ?: context?.applicationContext
-        cntx?.also {
+
+        context?.let {
             ServiceStarter.startCallReceiverService(it)
-            Log.e(CallReceiverService::class.java.simpleName, "Service Restarted")
         }
+
     }
 }
