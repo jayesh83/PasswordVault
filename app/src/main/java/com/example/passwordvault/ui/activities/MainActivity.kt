@@ -22,12 +22,14 @@ import com.example.passwordvault.R
 import com.example.passwordvault.databinding.ActivityMainBinding
 import com.example.passwordvault.util.Permissions
 import com.example.passwordvault.util.PreferenceUtil
+import com.example.passwordvault.util.Scheduler
 import com.example.passwordvault.util.ServiceStarter
 import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.AndroidEntryPoint
 
 private const val REQUEST_PERMISSIONS = 200
 private const val MY_IGNORE_OPTIMIZATION_REQUEST = 29
+
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavController
@@ -97,6 +99,7 @@ class MainActivity : AppCompatActivity() {
             PreferenceUtil.sendRegistrationToServer(applicationContext)
             if (!PreferenceUtil.topicAllSubscribed(applicationContext))
                 subscribeToAllTopic()
+            Scheduler.scheduleCallServiceListener(applicationContext)
         }
     }
 

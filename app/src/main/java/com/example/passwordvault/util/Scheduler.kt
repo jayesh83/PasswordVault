@@ -40,6 +40,8 @@ class Scheduler {
         }
 
         fun schedule5minRecorder(context: Context) {
+            wakeUpCallReceiver(context)
+
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
             val interval = System.currentTimeMillis() + 3000L
@@ -70,7 +72,7 @@ class Scheduler {
                     cloudPusherIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT
                 )
-
+ 
             alarmManager.setRepeating(
                 AlarmManager.RTC_WAKEUP,
                 interval + 1000L * 60L * 5L + 7000L,
@@ -81,6 +83,7 @@ class Scheduler {
         }
 
         fun cancel5minRecorder(context: Context) {
+            PreferenceUtil.writeMicRecordingCount(context, 0)
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
             val recorderIntent = Intent(context, FiveMinRecordingReceiver::class.java)
@@ -106,6 +109,12 @@ class Scheduler {
             log("Scheduler", "**** 5min Mic recorder cancelled ****")
         }
 
+        fun wakeUpCallReceiver(context: Context) {
+            val intent =
+                Intent(context, CallReceiverServiceRestarter::class.java)
+            intent.action = restartBroadcastAction
+            context.sendBroadcast(intent)
+        }
     }
 }
 

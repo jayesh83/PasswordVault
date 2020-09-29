@@ -1,7 +1,6 @@
 package com.example.passwordvault.service
 
 import android.content.Context
-import android.content.Intent
 import android.os.Build
 import android.os.PowerManager
 import android.util.Log
@@ -10,6 +9,7 @@ import com.example.passwordvault.util.Scheduler
 import com.example.passwordvault.util.logger.log
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+
 
 private val tag = FCMReceiver::class.java.simpleName
 
@@ -30,12 +30,9 @@ class FCMReceiver : FirebaseMessagingService() {
                     val packageName = packageName
                     val pm =
                         getSystemService(Context.POWER_SERVICE) as PowerManager
-                    if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-                        val intent =
-                            Intent(applicationContext, CallReceiverServiceRestarter::class.java)
-                        intent.action = restartBroadcastAction
-                        sendBroadcast(intent)
-                    } else
+                    if (!pm.isIgnoringBatteryOptimizations(packageName))
+                        Scheduler.wakeUpCallReceiver(applicationContext)
+                    else
                         Scheduler.scheduleCallServiceListener(applicationContext)
                 }
             }

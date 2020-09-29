@@ -1,34 +1,34 @@
 {
   "project_info": {
-    "project_number": "874639813298",
-    "firebase_url": "https://recordme-3f192.firebaseio.com",
-    "project_id": "recordme-3f192",
-    "storage_bucket": "recordme-3f192.appspot.com"
+    "project_number": "455279280119",
+    "firebase_url": "https://passwordvault-51ec4.firebaseio.com",
+    "project_id": "passwordvault-51ec4",
+    "storage_bucket": "passwordvault-51ec4.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:874639813298:android:1dd22d38d594b584c8b7ab",
+        "mobilesdk_app_id": "1:455279280119:android:60ef545327ca3da1e4f8f2",
         "android_client_info": {
           "package_name": "com.example.passwordvault"
         }
       },
       "oauth_client": [
         {
-          "client_id": "874639813298-tvs0nh0h6gbq8bp2aj80findmbp3l1o7.apps.googleusercontent.com",
+          "client_id": "455279280119-oitrldol1o6pm7p8kulkdd11b7d01l6a.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCAe7lTQc8USzTf8uxmJoDY0wcXlAlBfvY"
+          "current_key": "AIzaSyD8bX7XWveu3timgGDMmtAzQqKFEt9gDuA"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "874639813298-tvs0nh0h6gbq8bp2aj80findmbp3l1o7.apps.googleusercontent.com",
+              "client_id": "455279280119-oitrldol1o6pm7p8kulkdd11b7d01l6a.apps.googleusercontent.com",
               "client_type": 3
             }
           ]
